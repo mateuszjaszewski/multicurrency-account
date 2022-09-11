@@ -27,8 +27,7 @@ dependencies {
 	implementation("org.springdoc:springdoc-openapi-kotlin:1.6.11")
 	runtimeOnly("com.h2database:h2")
 
-	implementation("org.codehaus.groovy:groovy:3.0.10")
-	implementation("org.codehaus.groovy:groovy-json:3.0.10")
+	testImplementation("org.codehaus.groovy:groovy:3.0.10")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework:spring-test")
 	testImplementation(platform("org.spockframework:spock-bom:2.1-groovy-3.0"))

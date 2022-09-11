@@ -28,7 +28,7 @@ class AccountFacade(val accountRepository: AccountRepository,
     }
 
     @Transactional
-    fun exchangeMoney(pesel: String, request: MoneyExchangeRequest) {
+    fun exchangeMoney(pesel: String, request: ExchangeCurrencyRequest) {
         if (request.amount < BigDecimal.ZERO) {
             throw InvalidOperationException("Amount cannot be negative")
         }

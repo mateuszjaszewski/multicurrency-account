@@ -25,7 +25,7 @@ class AccountController(val accountFacade: AccountFacade) {
     @PostMapping("/{pesel}/transactions/currency-exchanges")
     @Operation(summary = "Performs money exchange form one currency to other")
     fun exchangeMoney(@PathVariable @Schema(example = "64102278587") pesel: String,
-                      @RequestBody request: MoneyExchangeRequest) {
+                      @RequestBody request: ExchangeCurrencyRequest) {
         accountFacade.exchangeMoney(pesel, request)
     }
 
@@ -61,9 +61,9 @@ class AccountController(val accountFacade: AccountFacade) {
     class RegisterAccountRequest(val owner: OwnerDto,
                                  @field:Schema(example = "1000.00") val initialDeposit: BigDecimal)
 
-    class MoneyExchangeRequest(@field:Schema(example = "100.00") val amount: BigDecimal,
-                               @field:Schema(example = "PLN") val sourceCurrency: Currency,
-                               @field:Schema(example = "USD") val targetCurrency: Currency)
+    class ExchangeCurrencyRequest(@field:Schema(example = "100.00") val amount: BigDecimal,
+                                  @field:Schema(example = "PLN") val sourceCurrency: Currency,
+                                  @field:Schema(example = "USD") val targetCurrency: Currency)
 
     class AccountDetailsResponse(val owner: OwnerDto, val subAccounts: List<SubAccountDto>)
     class AccountTransactionsResponse(val transactions: List<TransactionDto>)

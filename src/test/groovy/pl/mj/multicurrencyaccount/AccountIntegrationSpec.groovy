@@ -67,7 +67,7 @@ class AccountIntegrationSpec extends Specification {
 
     def 'should exchange some PLN to USD'() {
         given:
-        def request = new MoneyExchangeRequest(EXCHANGE_PLN_TO_USD_AMOUNT, PLN, USD)
+        def request = new ExchangeCurrencyRequest(EXCHANGE_PLN_TO_USD_AMOUNT, PLN, USD)
 
         when:
         def response = mockMvc.perform(post("/api/accounts/$PESEl/transactions/currency-exchanges")
@@ -81,7 +81,7 @@ class AccountIntegrationSpec extends Specification {
 
     def 'should exchange some USD to PLN'() {
         given:
-        def request = new MoneyExchangeRequest(EXCHANGE_USD_TO_PLN_AMOUNT, USD, PLN)
+        def request = new ExchangeCurrencyRequest(EXCHANGE_USD_TO_PLN_AMOUNT, USD, PLN)
 
         when:
         def response = mockMvc.perform(post("/api/accounts/$PESEl/transactions/currency-exchanges")
@@ -143,7 +143,7 @@ class AccountIntegrationSpec extends Specification {
 
     def 'should respond with status BAD_REQUEST when there is not enough money on account'() {
         given:
-        def request = new MoneyExchangeRequest(1_000_000.00, PLN, USD)
+        def request = new ExchangeCurrencyRequest(1_000_000.00, PLN, USD)
 
         when:
         def response = mockMvc.perform(post("/api/accounts/$PESEl/transactions/currency-exchanges")

@@ -1,11 +1,14 @@
 # Multi-currency account
 Aplikacja umożliwia dokonywanie wymiany walut PLN <-> USD po aktualnym kursie pobranym z https://api.nbp.pl/api/exchangerates/rates/c/ .
-Założone zostało, że główną walutą jest PLN i w zależności od tego czy dokonujemy wymiany z czy na złotówki to transakcja 
-traktowana jest jako sprzedaż lub kupno obcej waluty.Wpływa to na kurs jaki jest przyjmowany dla poszczególnych transakcji.
+W ramach zadania zostało przyjęte, że główną walutą jest PLN i w zależności od tego, czy dokonujemy wymiany z czy na złotówki, 
+to transakcja traktowana jest jako sprzedaż lub kupno obcej waluty. Wpływa to na kurs, jaki jest przyjmowany dla poszczególnych transakcji.
 
 ## Architektura
-Aplikacja powstała w języku Kotlin przy wykorzystaniu DDD oraz event-sourcing'u, oczywiście ze względu na dość skromną domenę 
-takie podejście jest w tym przypadku "overengineering'iem", ale miało to na celu, pokazanie jak taka implementacja mogłaby wyglądać. 
+Aplikacja powstała w języku Kotlin przy wykorzystaniu DDD oraz event-sourcing'u. Ze względu na dość skromną domenę 
+takie podejście jest w tym przypadku nadmiarowe, jednak celem było zaprezentowanie jak mogą być wykorzystane wspomniane techniki. 
+
+## Baza danych
+Do zapisu zdarzeń wykorzystana jest baza H2, która przechowuje dane w pamięci.
 
 ## Wymagania
 - Java w wersji co najmniej 1.8
