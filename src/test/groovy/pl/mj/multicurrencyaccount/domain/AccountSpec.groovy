@@ -55,56 +55,56 @@ class AccountSpec extends Specification {
         thrown(CannotRegisterAccountException)
     }
 
-    def 'should buy USD when there is enough money on PLN sub-account'() {
+    def 'should exchange PLN to USD when there is enough money on PLN sub-account'() {
         given:
         def account = registeredAccount(1000.00)
-        def buyCommand = new BuyCurrencyCommand(now, 100.00, USD, 4.00)
+        def command = new ExchangeCurrencyCommand(now, 500.00, PLN, USD, 0.2)
 
         when:
-        account.buyCurrency(buyCommand)
+        account.exchangeCurrency(command)
 
         then:
-        account.balance(PLN) == 600.00
+        account.balance(PLN) == 500.00
         account.balance(USD) == 100.00
-        account.pendingEvents.contains(new CurrencyBoughtEvent(now, USD, buyCommand.amount, buyCommand.rate))
+        account.pendingEvents.contains(new CurrencyExchangedEvent(now, command.amount, PLN, USD, command.rate))
     }
 
-    def 'should sell USD when there is enough money on USD sub-account'() {
+    def 'should exchange USD to PLN when there is enough money on USD sub-account'() {
         given:
         def account = registeredAccount(1000.00)
-        account.buyCurrency(new BuyCurrencyCommand(now, 100.00, USD, 4.00))
+        account.exchangeCurrency(new ExchangeCurrencyCommand(now, 500.00, PLN, USD, 0.2))
 
         and:
-        def sellCommand = new SellCurrencyCommand(now, 50.00, USD, 3.00)
+        def command = new ExchangeCurrencyCommand(now, 50.00, USD, PLN, 4.00)
 
         when:
-        account.sellCurrency(sellCommand)
+        account.exchangeCurrency(command)
 
         then:
-        account.balance(PLN) == 750.00
+        account.balance(PLN) == 700.00
         account.balance(USD) == 50.00
-        account.pendingEvents.contains(new CurrencySoldEvent(now, USD, sellCommand.amount, sellCommand.rate))
+        account.pendingEvents.contains(new CurrencyExchangedEvent(now, command.amount, USD, PLN, command.rate))
     }
 
-    def 'should not allow to buy USD when there is not enough money on PLN sub-account'() {
+    def 'should not allow to exchange PLN to USD when there is not enough money on PLN sub-account'() {
         given:
         def account = registeredAccount(10.00)
 
         when:
-        account.buyCurrency(new BuyCurrencyCommand(now, 100.00, USD, 4.00))
+        account.exchangeCurrency(new ExchangeCurrencyCommand(now, 100.00, PLN, USD, 0.2))
 
         then:
         thrown(InsufficientFoundsException)
     }
 
 
-    def 'should not allow to sell USD when there is not enough money on USD sub-account'() {
+    def 'should not allow to exchange USD to PLN when there is not enough money on USD sub-account'() {
         given:
-        def account = registeredAccount(40.00)
-        account.buyCurrency(new BuyCurrencyCommand(now, 10.00, USD, 4.00))
+        def account = registeredAccount(50.00)
+        account.exchangeCurrency(new ExchangeCurrencyCommand(now, 50.00, PLN, USD, 0.2))
 
         when:
-        account.sellCurrency(new SellCurrencyCommand(now, 100.00, USD, 4.00))
+        account.exchangeCurrency(new ExchangeCurrencyCommand(now, 100.00, USD, PLN, 4.00))
 
         then:
         thrown(InsufficientFoundsException)

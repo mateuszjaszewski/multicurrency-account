@@ -30,11 +30,11 @@ class AccountIntegrationSpec extends Specification {
     private static final String LAST_NAME = "KOWALSKI"
 
     private static final BigDecimal INITIAL_DEPOSIT = 1000.00
-    private static final BigDecimal BUY_USD_AMOUNT = 100.00
-    private static final BigDecimal SELL_USD_AMOUNT = 50.00
+    private static final BigDecimal EXCHANGE_PLN_TO_USD_AMOUNT = 500.00
+    private static final BigDecimal EXCHANGE_USD_TO_PLN_AMOUNT = 50.00
 
-    private static final BigDecimal BUY_USD_RATE = 4.00
-    private static final BigDecimal SELL_USD_RATE = 3.50
+    private static final BigDecimal BUY_USD_RATE = 5.00
+    private static final BigDecimal SELL_USD_RATE = 4.00
 
     @Autowired
     private MockMvc mockMvc
@@ -67,7 +67,7 @@ class AccountIntegrationSpec extends Specification {
 
     def 'should exchange some PLN to USD'() {
         given:
-        def request = new MoneyExchangeRequest(BUY_USD_AMOUNT, PLN, USD)
+        def request = new MoneyExchangeRequest(EXCHANGE_PLN_TO_USD_AMOUNT, PLN, USD)
 
         when:
         def response = mockMvc.perform(post("/api/accounts/$PESEl/transactions/currency-exchanges")
@@ -81,7 +81,7 @@ class AccountIntegrationSpec extends Specification {
 
     def 'should exchange some USD to PLN'() {
         given:
-        def request = new MoneyExchangeRequest(SELL_USD_AMOUNT, USD, PLN)
+        def request = new MoneyExchangeRequest(EXCHANGE_USD_TO_PLN_AMOUNT, USD, PLN)
 
         when:
         def response = mockMvc.perform(post("/api/accounts/$PESEl/transactions/currency-exchanges")
@@ -106,7 +106,7 @@ class AccountIntegrationSpec extends Specification {
         accountDetails.owner.pesel == PESEl
         accountDetails.owner.firstName == FIRST_NAME
         accountDetails.owner.lastName == LAST_NAME
-        accountDetails.subAccounts.find {it.currency == PLN}.balance == 775.00
+        accountDetails.subAccounts.find {it.currency == PLN}.balance == 700.00
         accountDetails.subAccounts.find {it.currency == USD}.balance == 50.00
     }
 
@@ -123,19 +123,21 @@ class AccountIntegrationSpec extends Specification {
         def transactions = accountTransactions.transactions
 
         and:
-        def currencySoldTransaction = (transactions[0] as CurrencySoldTransactionDto)
-        currencySoldTransaction.amount == SELL_USD_AMOUNT
-        currencySoldTransaction.rate == SELL_USD_RATE
-        currencySoldTransaction.currency == USD
+        def usdToPlnExchanged = (transactions[0] as CurrencyExchangedDto)
+        usdToPlnExchanged.amount == EXCHANGE_USD_TO_PLN_AMOUNT
+        usdToPlnExchanged.rate == SELL_USD_RATE
+        usdToPlnExchanged.sourceCurrency == USD
+        usdToPlnExchanged.targetCurrency == PLN
 
         and:
-        def currencyBoughtTransaction = (transactions[1] as CurrencyBoughtTransactionDto)
-        currencyBoughtTransaction.amount == BUY_USD_AMOUNT
-        currencyBoughtTransaction.rate == BUY_USD_RATE
-        currencyBoughtTransaction.currency == USD
+        def plnToUsdExchanged = (transactions[1] as CurrencyExchangedDto)
+        plnToUsdExchanged.amount == EXCHANGE_PLN_TO_USD_AMOUNT
+        plnToUsdExchanged.rate == 1 / BUY_USD_RATE
+        plnToUsdExchanged.sourceCurrency == PLN
+        plnToUsdExchanged.targetCurrency == USD
 
         and:
-        def initialDepositTransaction = (transactions[2] as InitialDepositTransactionDto)
+        def initialDepositTransaction = (transactions[2] as InitialDepositDto)
         initialDepositTransaction.initialDeposit == INITIAL_DEPOSIT
     }
 

@@ -5,6 +5,8 @@ import org.springframework.transaction.annotation.Transactional
 import pl.mj.multicurrencyaccount.application.AccountController.*
 import pl.mj.multicurrencyaccount.domain.*
 import pl.mj.multicurrencyaccount.domain.Currency
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Clock
 import java.time.Instant
 
@@ -15,14 +17,21 @@ class AccountFacade(val accountRepository: AccountRepository,
 
     @Transactional
     fun registerAccount(request: RegisterAccountRequest) {
+        if (request.initialDeposit < BigDecimal.ZERO) {
+            throw InvalidOperationException("Initial deposit cannot be negative")
+        }
         val account = accountRepository.getById(request.owner.pesel)
         val owner = Owner(Pesel(request.owner.pesel), request.owner.firstName, request.owner.lastName)
-        account.register(RegisterAccountCommand(now(), owner, request.initialDeposit))
+        val initialDeposit = request.initialDeposit.setScale(2, RoundingMode.DOWN)
+        account.register(RegisterAccountCommand(now(), owner, initialDeposit))
         accountRepository.save(account)
     }
 
     @Transactional
     fun exchangeMoney(pesel: String, request: MoneyExchangeRequest) {
+        if (request.amount < BigDecimal.ZERO) {
+            throw InvalidOperationException("Amount cannot be negative")
+        }
         if (request.sourceCurrency != Currency.PLN && request.targetCurrency != Currency.PLN) {
             throw InvalidOperationException("Only exchange from or to PLN is supported")
         }
@@ -30,14 +39,16 @@ class AccountFacade(val accountRepository: AccountRepository,
             throw InvalidOperationException("Source currency and target currency must be different")
         }
 
-        val account = accountRepository.getById(pesel)
+        val account = findRegisteredAccount(pesel)
         if (request.sourceCurrency == Currency.PLN) {
-            val buyingRate = currencyRateProvider.buyingRate(request.targetCurrency)
-            account.buyCurrency(BuyCurrencyCommand(now(), request.amount, request.targetCurrency, buyingRate))
+            val buyingRate = inverse(currencyRateProvider.buyingRate(request.targetCurrency))
+            account.exchangeCurrency(ExchangeCurrencyCommand(
+                    now(), request.amount, request.sourceCurrency, request.targetCurrency, buyingRate))
         }
         if (request.targetCurrency == Currency.PLN) {
             val sellingRate = currencyRateProvider.sellingRate(request.sourceCurrency)
-            account.sellCurrency(SellCurrencyCommand(now(), request.amount, request.sourceCurrency, sellingRate))
+            account.exchangeCurrency(ExchangeCurrencyCommand(
+                    now(), request.amount, request.sourceCurrency, request.targetCurrency, sellingRate))
         }
         accountRepository.save(account)
     }
@@ -47,7 +58,7 @@ class AccountFacade(val accountRepository: AccountRepository,
         val account = findRegisteredAccount(pesel)
         val owner = account.owner
         return AccountDetailsResponse(
-                OwnerDto(owner.pesel.toString(), owner.firstName, owner.lastName),
+                OwnerDto(owner.pesel.value, owner.firstName, owner.lastName),
                 account.subAccounts.map { SubAccountDto(it.currency, it.balance) }
         )
     }
@@ -57,9 +68,9 @@ class AccountFacade(val accountRepository: AccountRepository,
         val account = findRegisteredAccount(pesel)
         val transactions = account.events.sortedWith(compareBy(DomainEvent::timestamp).reversed()).map { event ->
             when (event) {
-                is AccountRegisteredEvent -> InitialDepositTransactionDto(event.timestamp, event.initialDeposit)
-                is CurrencySoldEvent -> CurrencySoldTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
-                is CurrencyBoughtEvent -> CurrencyBoughtTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
+                is AccountRegisteredEvent -> InitialDepositDto(event.timestamp, event.initialDeposit)
+                is CurrencyExchangedEvent -> CurrencyExchangedDto(event.timestamp, event.amount,
+                        event.sourceCurrency, event.targetCurrency, event.rate)
             }
         }
         return AccountTransactionsResponse(transactions)
@@ -74,6 +85,10 @@ class AccountFacade(val accountRepository: AccountRepository,
     }
 
     private fun now() = Instant.now(clock)
+
+    private fun inverse(rate: BigDecimal): BigDecimal {
+        return BigDecimal.ONE.divide(rate, 4, RoundingMode.HALF_UP)
+    }
 
     class AccountNotFoundException : RuntimeException("Cannot find registered account")
     class InvalidOperationException(override val message: String) : RuntimeException(message)

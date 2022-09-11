@@ -12,8 +12,13 @@ class CurrencyRateProviderImpl(private val nbpApiRestTemplate: RestTemplate) : C
     private class ApiResponse(val rates: List<Rate>)
     private class Rate(val bid: BigDecimal, val ask: BigDecimal)
 
-    override fun buyingRate(currency: Currency) = fetchRate(currency).bid
-    override fun sellingRate(currency: Currency) = fetchRate(currency).ask
+    override fun buyingRate(currency: Currency): BigDecimal {
+        return fetchRate(currency).ask
+    }
+
+    override fun sellingRate(currency: Currency): BigDecimal {
+        return fetchRate(currency).bid
+    }
 
     private fun fetchRate(currency: Currency): Rate {
         val response = nbpApiRestTemplate.getForEntity("/${currency.name}", ApiResponse::class.java)

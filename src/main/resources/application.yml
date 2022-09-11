@@ -4,3 +4,10 @@ nbp.api:
   url: https://api.nbp.pl/api/exchangerates/rates/c/
   connectTimeout: 100ms
   readTimeout: 2s
+
+spring:
+  jpa:
+    hibernate.ddl-auto: none
+  h2.console:
+    enabled: true
+    path: /h2

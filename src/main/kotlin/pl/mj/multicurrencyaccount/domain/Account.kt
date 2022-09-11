@@ -1,6 +1,7 @@
 package pl.mj.multicurrencyaccount.domain
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Clock
 
 const val MIN_OWNER_AGE = 18
@@ -35,18 +36,12 @@ class Account (val id: String,
         applyAndAppend(AccountRegisteredEvent(command.timestamp, command.owner, command.initialDeposit))
     }
 
-    fun buyCurrency(buy: BuyCurrencyCommand) {
-        if (buy.amount * buy.rate > subAccountFor(Currency.PLN).balance) {
-            throw InsufficientFoundsException(Currency.PLN)
+    fun exchangeCurrency(command: ExchangeCurrencyCommand) {
+        if (command.amount > subAccountFor(command.sourceCurrency).balance) {
+            throw InsufficientFoundsException(command.sourceCurrency)
         }
-        applyAndAppend(CurrencyBoughtEvent(buy.timestamp, buy.currency, buy.amount, buy.rate))
-    }
-
-    fun sellCurrency(sell: SellCurrencyCommand) {
-        if (sell.amount > subAccountFor(sell.currency).balance) {
-            throw InsufficientFoundsException(sell.currency)
-        }
-        applyAndAppend(CurrencySoldEvent(sell.timestamp, sell.currency, sell.amount, sell.rate))
+        applyAndAppend(CurrencyExchangedEvent(command.timestamp, command.amount,
+                command.sourceCurrency, command.targetCurrency, command.rate))
     }
 
     fun isRegistered() = status == Status.REGISTERED
@@ -63,8 +58,7 @@ class Account (val id: String,
     private fun apply(event: DomainEvent) {
         when (event) {
             is AccountRegisteredEvent -> applyAccountRegisteredEvent(event)
-            is CurrencySoldEvent -> applyCurrencySoldEvent(event)
-            is CurrencyBoughtEvent -> applyCurrencyBoughtEvent(event)
+            is CurrencyExchangedEvent -> applyCurrencyExchangedEvent(event)
         }
     }
 
@@ -74,14 +68,9 @@ class Account (val id: String,
         subAccountFor(Currency.PLN).deposit(event.initialDeposit)
     }
 
-    private fun applyCurrencySoldEvent(sold: CurrencySoldEvent) {
-        subAccountFor(sold.currency).withdraw(sold.amount)
-        subAccountFor(Currency.PLN).deposit(sold.amount * sold.rate)
-    }
-
-    private fun applyCurrencyBoughtEvent(bought: CurrencyBoughtEvent) {
-        subAccountFor(Currency.PLN).withdraw(bought.amount * bought.rate)
-        subAccountFor(bought.currency).deposit(bought.amount)
+    private fun applyCurrencyExchangedEvent(event: CurrencyExchangedEvent) {
+        subAccountFor(event.sourceCurrency).withdraw(event.amount)
+        subAccountFor(event.targetCurrency).deposit((event.amount * event.rate).setScale(2, RoundingMode.DOWN))
     }
 
     private fun subAccountFor(currency: Currency): SubAccount {
@@ -98,5 +87,5 @@ class Account (val id: String,
     }
 
     class CannotRegisterAccountException(message: String) : DomainException(message)
-    class InsufficientFoundsException(currency: Currency) : DomainException("Insufficient founds on $currency sub account")
+    class InsufficientFoundsException(currency: Currency) : DomainException("Insufficient founds on $currency sub-account")
 }

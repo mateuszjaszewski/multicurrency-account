@@ -77,18 +77,16 @@ class AccountController(val accountFacade: AccountFacade) {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
     @JsonSubTypes(
-            JsonSubTypes.Type(value = CurrencyBoughtTransactionDto::class, name = "CURRENCY_BOUGHT"),
-            JsonSubTypes.Type(value = CurrencySoldTransactionDto::class, name = "CURRENCY_SOLD"),
-            JsonSubTypes.Type(value = InitialDepositTransactionDto::class, name = "INITIAL_DEPOSIT")
+            JsonSubTypes.Type(value = CurrencyExchangedDto::class, name = "CURRENCY_EXCHANGED"),
+            JsonSubTypes.Type(value = InitialDepositDto::class, name = "INITIAL_DEPOSIT")
     )
     sealed class TransactionDto(val timestamp: Instant)
 
-    class CurrencyBoughtTransactionDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
+    class CurrencyExchangedDto(timestamp: Instant, val amount: BigDecimal,
+                               val sourceCurrency: Currency, val targetCurrency: Currency,
+                               val rate: BigDecimal)
         : TransactionDto(timestamp)
 
-    class CurrencySoldTransactionDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
-        : TransactionDto(timestamp)
-
-    class InitialDepositTransactionDto(timestamp: Instant, val initialDeposit: BigDecimal)
+    class InitialDepositDto(timestamp: Instant, val initialDeposit: BigDecimal)
         : TransactionDto(timestamp)
 }
