@@ -4,12 +4,13 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import pl.mj.multicurrencyaccount.application.AccountController.*
 import pl.mj.multicurrencyaccount.domain.*
+import pl.mj.multicurrencyaccount.domain.Currency
 import java.time.Clock
 import java.time.Instant
 
 @Component
 class AccountFacade(val accountRepository: AccountRepository,
-                    val currencyRatioProvider: CurrencyRatioProvider,
+                    val currencyRateProvider: CurrencyRateProvider,
                     val clock: Clock) {
 
     @Transactional
@@ -22,10 +23,22 @@ class AccountFacade(val accountRepository: AccountRepository,
 
     @Transactional
     fun exchangeMoney(pesel: String, request: MoneyExchangeRequest) {
+        if (request.sourceCurrency != Currency.PLN && request.targetCurrency != Currency.PLN) {
+            throw InvalidOperationException("Only exchange from or to PLN is supported")
+        }
+        if (request.sourceCurrency == request.targetCurrency) {
+            throw InvalidOperationException("Source currency and target currency must be different")
+        }
+
         val account = accountRepository.getById(pesel)
-        val ratio = currencyRatioProvider.ratio(request.sourceCurrency, request.targetCurrency)
-        val command = ExchangeMoneyCommand(now(), request.amount, request.sourceCurrency, request.targetCurrency, ratio)
-        account.exchangeMoney(command)
+        if (request.sourceCurrency == Currency.PLN) {
+            val buyingRate = currencyRateProvider.buyingRate(request.targetCurrency)
+            account.buyCurrency(BuyCurrencyCommand(now(), request.amount, request.targetCurrency, buyingRate))
+        }
+        if (request.targetCurrency == Currency.PLN) {
+            val sellingRate = currencyRateProvider.sellingRate(request.sourceCurrency)
+            account.sellCurrency(SellCurrencyCommand(now(), request.amount, request.sourceCurrency, sellingRate))
+        }
         accountRepository.save(account)
     }
 
@@ -45,7 +58,8 @@ class AccountFacade(val accountRepository: AccountRepository,
         val transactions = account.events.sortedWith(compareBy(DomainEvent::timestamp).reversed()).map { event ->
             when (event) {
                 is AccountRegisteredEvent -> InitialDepositTransactionDto(event.timestamp, event.initialDeposit)
-                is MoneyExchangedEvent -> MoneyExchangeTransactionDto(event.timestamp, event.from, event.to)
+                is CurrencySoldEvent -> CurrencySoldTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
+                is CurrencyBoughtEvent -> CurrencyBoughtTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
             }
         }
         return AccountTransactionsResponse(transactions)
@@ -54,11 +68,14 @@ class AccountFacade(val accountRepository: AccountRepository,
     private fun findRegisteredAccount(pesel: String): Account {
         val account = accountRepository.getById(pesel)
         if (!account.isRegistered()) {
-            throw RegisteredAccountNotFoundException()
+            throw AccountNotFoundException()
         }
         return account
     }
 
     private fun now() = Instant.now(clock)
+
+    class AccountNotFoundException : RuntimeException("Cannot find registered account")
+    class InvalidOperationException(override val message: String) : RuntimeException(message)
 
 }

@@ -36,4 +36,6 @@ data class Pesel(private val pesel: String) {
         val checksum = (0..10).sumOf { weights[it] * digits[it] } % 10
         return checksum == 0
     }
+
+    class InvalidPeselException(pesel: String) : DomainException("Pesel $pesel is invalid")
 }
