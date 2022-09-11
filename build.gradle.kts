@@ -24,10 +24,13 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.springdoc:springdoc-openapi-ui:1.6.11")
 	implementation("org.codehaus.groovy:groovy:3.0.10")
+	implementation("org.codehaus.groovy:groovy-json:3.0.10")
 
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework:spring-test")
 	testImplementation(platform("org.spockframework:spock-bom:2.1-groovy-3.0"))
 	testImplementation("org.spockframework:spock-core")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.spockframework:spock-spring")
 }
 
 tasks.withType<KotlinCompile> {

@@ -1,5 +1,7 @@
 package pl.mj.multicurrencyaccount.application
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import pl.mj.multicurrencyaccount.application.AccountFacade.*
@@ -13,7 +15,7 @@ import java.time.Instant
 class AccountController(val accountFacade: AccountFacade) {
 
     @PostMapping
-    fun registerAccount(@RequestBody request: CreateAccountRequest) {
+    fun registerAccount(@RequestBody request: RegisterAccountRequest) {
         accountFacade.registerAccount(request)
     }
 
@@ -49,7 +51,7 @@ class AccountController(val accountFacade: AccountFacade) {
     @ExceptionHandler(AccountNotFoundException::class)
     fun handleNotFoundException() {}
 
-    class CreateAccountRequest(val owner: OwnerDto, val initialDeposit: BigDecimal)
+    class RegisterAccountRequest(val owner: OwnerDto, val initialDeposit: BigDecimal)
     class MoneyExchangeRequest(val amount: BigDecimal, val sourceCurrency: Currency, val targetCurrency: Currency)
 
     class AccountDetailsResponse(val owner: OwnerDto, val subAccounts: List<SubAccountDto>)
@@ -59,13 +61,17 @@ class AccountController(val accountFacade: AccountFacade) {
     class OwnerDto(val pesel: String, val firstName: String, val lastName: String)
     class SubAccountDto(val currency: Currency, val balance: BigDecimal)
 
-    sealed class TransactionDto(val timestamp: Instant, val type: Type) {
-        enum class Type { CURRENCY_BOUGHT, CURRENCY_SOLD, INITIAL_DEPOSIT }
-    }
-    class CurrencyBoughtTransactionDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
-        : TransactionDto(timestamp, Type.CURRENCY_BOUGHT)
-    class CurrencySoldTransactionDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
-        : TransactionDto(timestamp, Type.CURRENCY_SOLD)
-    class InitialDepositTransactionDto(timestamp: Instant, val initialDeposit: BigDecimal)
-        : TransactionDto(timestamp, Type.INITIAL_DEPOSIT)
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes(
+        JsonSubTypes.Type(value = CurrencyBoughtDto::class, name = "CURRENCY_BOUGHT"),
+        JsonSubTypes.Type(value = CurrencySoldDto::class, name = "CURRENCY_SOLD"),
+        JsonSubTypes.Type(value = InitialDepositDto::class, name = "INITIAL_DEPOSIT"),
+    )
+    sealed class TransactionDto(val timestamp: Instant)
+    class CurrencyBoughtDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
+        : TransactionDto(timestamp)
+    class CurrencySoldDto(timestamp: Instant, val currency: Currency, val amount: BigDecimal, val rate: BigDecimal)
+        : TransactionDto(timestamp)
+    class InitialDepositDto(timestamp: Instant, val initialDeposit: BigDecimal)
+        : TransactionDto(timestamp)
 }
