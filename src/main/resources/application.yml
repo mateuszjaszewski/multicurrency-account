@@ -1,0 +1,6 @@
+server.port: 8080
+
+nbp.api:
+  url: https://api.nbp.pl/api/exchangerates/rates/c/
+  connectTimeout: 100ms
+  readTimeout: 2s
