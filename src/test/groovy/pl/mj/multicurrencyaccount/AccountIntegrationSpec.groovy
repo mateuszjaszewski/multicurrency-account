@@ -123,19 +123,19 @@ class AccountIntegrationSpec extends Specification {
         def transactions = accountTransactions.transactions
 
         and:
-        def currencySoldTransaction = (transactions[0] as CurrencySoldDto)
+        def currencySoldTransaction = (transactions[0] as CurrencySoldTransactionDto)
         currencySoldTransaction.amount == SELL_USD_AMOUNT
         currencySoldTransaction.rate == SELL_USD_RATE
         currencySoldTransaction.currency == USD
 
         and:
-        def currencyBoughtTransaction = (transactions[1] as CurrencyBoughtDto)
+        def currencyBoughtTransaction = (transactions[1] as CurrencyBoughtTransactionDto)
         currencyBoughtTransaction.amount == BUY_USD_AMOUNT
         currencyBoughtTransaction.rate == BUY_USD_RATE
         currencyBoughtTransaction.currency == USD
 
         and:
-        def initialDepositTransaction = (transactions[2] as InitialDepositDto)
+        def initialDepositTransaction = (transactions[2] as InitialDepositTransactionDto)
         initialDepositTransaction.initialDeposit == INITIAL_DEPOSIT
     }
 

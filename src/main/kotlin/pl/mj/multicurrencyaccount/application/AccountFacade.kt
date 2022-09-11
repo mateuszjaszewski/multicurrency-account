@@ -57,9 +57,9 @@ class AccountFacade(val accountRepository: AccountRepository,
         val account = findRegisteredAccount(pesel)
         val transactions = account.events.sortedWith(compareBy(DomainEvent::timestamp).reversed()).map { event ->
             when (event) {
-                is AccountRegisteredEvent -> InitialDepositDto(event.timestamp, event.initialDeposit)
-                is CurrencySoldEvent -> CurrencySoldDto(event.timestamp, event.currency, event.amount, event.rate)
-                is CurrencyBoughtEvent -> CurrencyBoughtDto(event.timestamp, event.currency, event.amount, event.rate)
+                is AccountRegisteredEvent -> InitialDepositTransactionDto(event.timestamp, event.initialDeposit)
+                is CurrencySoldEvent -> CurrencySoldTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
+                is CurrencyBoughtEvent -> CurrencyBoughtTransactionDto(event.timestamp, event.currency, event.amount, event.rate)
             }
         }
         return AccountTransactionsResponse(transactions)
