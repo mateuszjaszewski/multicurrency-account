@@ -12,7 +12,6 @@ class CurrencyRateProviderConfig {
     fun nbpApiRestTemplate() : RestTemplate {
         return RestTemplateBuilder()
                 .rootUri("https://api.nbp.pl/api/exchangerates/rates/c/")
-                //.defaultHeader("Accept", "application/json")
                 .build()
     }
 

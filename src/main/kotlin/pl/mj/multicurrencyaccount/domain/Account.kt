@@ -23,6 +23,8 @@ class Account (val id: String,
         events.forEach(this::apply)
     }
 
+    fun balance(currency: Currency) = subAccountFor(currency).balance
+
     fun register(command: RegisterAccountCommand) {
         if (status == Status.REGISTERED) {
             throw CannotRegisterAccountException("Account already registered for owner with pesel ${owner.pesel}")
@@ -83,18 +85,18 @@ class Account (val id: String,
     }
 
     private fun subAccountFor(currency: Currency): SubAccount {
-        return subAccounts.find { it.currency == currency } !! //
+        return subAccounts.find { it.currency == currency } !!
     }
 
     private fun initSubAccountForEachCurrency(): List<SubAccount> {
         return Currency.values().map { currency -> SubAccount(currency, BigDecimal.ZERO) }
     }
 
+    class SubAccount(val currency: Currency, var balance: BigDecimal) {
+        fun deposit(amount: BigDecimal) { balance += amount }
+        fun withdraw(amount: BigDecimal) { balance -= amount }
+    }
+
     class CannotRegisterAccountException(message: String) : DomainException(message)
     class InsufficientFoundsException(currency: Currency) : DomainException("Insufficient founds on $currency sub account")
-}
-
-class SubAccount(val currency: Currency, var balance: BigDecimal) {
-    fun deposit(amount: BigDecimal) { balance += amount }
-    fun withdraw(amount: BigDecimal) { balance -= amount }
 }

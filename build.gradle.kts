@@ -5,6 +5,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.13.RELEASE"
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
+	groovy
 }
 
 group = "pl.mj"
@@ -22,6 +23,10 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.springdoc:springdoc-openapi-ui:1.6.11")
+	implementation("org.codehaus.groovy:groovy:3.0.10")
+
+	testImplementation(platform("org.spockframework:spock-bom:2.1-groovy-3.0"))
+	testImplementation("org.spockframework:spock-core")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
@@ -34,4 +39,7 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	testLogging {
+		events("passed", "skipped", "failed")
+	}
 }
